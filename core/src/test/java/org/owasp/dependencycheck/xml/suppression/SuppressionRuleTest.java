@@ -86,6 +86,22 @@ public class SuppressionRuleTest extends BaseTest {
     }
 
     /**
+     * Test of IncludedBy property, of class SuppressionRule.
+     */
+    @Test
+    public void testGetIncludedBy() {
+        SuppressionRule instance = new SuppressionRule();
+        List<String> includedBy = new ArrayList<>();
+        instance.setIncludedBy(includedBy);
+        assertFalse(instance.hasIncludedBy());
+        instance.addIncludedBy("pkg:maven/com.github.spotbugs/spotbugs@4.7.3");
+        assertTrue(instance.hasIncludedBy());
+        List<String> result = instance.getIncludedBy();
+        assertEquals(includedBy, result);
+    }
+
+
+    /**
      * Test of CvssBelow property, of class SuppressionRule.
      */
     @Test
@@ -128,6 +144,17 @@ public class SuppressionRuleTest extends BaseTest {
         assertTrue(instance.hasCve());
         List<String> result = instance.getCve();
         assertEquals(cve, result);
+    }
+
+    public void testIncludedBy() {
+        SuppressionRule instance = new SuppressionRule();
+        List<String> includedBy = new ArrayList<>();
+        instance.setIncludedBy(includedBy);
+        assertFalse(instance.hasIncludedBy());
+        instance.addIncludedBy("pkg:maven/com.github.spotbugs/spotbugs@4.7.3");
+        assertTrue(instance.hasIncludedBy());
+        List<String> result = instance.getIncludedBy();
+        assertEquals(includedBy, result);
     }
 
     /**
@@ -418,6 +445,8 @@ public class SuppressionRuleTest extends BaseTest {
         dependency.addVulnerableSoftwareIdentifier(cpeId);
         String sha1 = dependency.getSha1sum();
         dependency.setSha1sum("384FAA82E193D4E4B0546059CA09572654BC3970");
+        dependency.addIncludedBy("pkg:maven/com.github.spotbugs/spotbugs@4.7.3");
+        dependency.addIncludedBy("pkg:maven/org.apache.kafka/mirror@3.7.0-SNAPSHOT");
         Vulnerability v = createVulnerability();
         dependency.addVulnerability(v);
 
@@ -450,6 +479,17 @@ public class SuppressionRuleTest extends BaseTest {
         instance.process(dependency);
         assertEquals(1, dependency.getVulnerabilities().size());
         instance.addCve("CVE-2013-1337");
+        instance.process(dependency);
+        assertTrue(dependency.getVulnerabilities().isEmpty());
+        assertEquals(1, dependency.getSuppressedVulnerabilities().size());
+
+        //includedBy
+        dependency.addVulnerability(v);
+        instance = new SuppressionRule();
+        instance.addIncludedBy("pkg:maven/com.github.spotbugs/spotbugs@4.7.3");
+        instance.process(dependency);
+        assertEquals(1, dependency.getVulnerabilities().size());
+        instance.addIncludedBy("pkg:maven/org.apache.kafka/mirror@3.7.0-SNAPSHOT");
         instance.process(dependency);
         assertTrue(dependency.getVulnerabilities().isEmpty());
         assertEquals(1, dependency.getSuppressedVulnerabilities().size());

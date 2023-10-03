@@ -48,6 +48,7 @@
                                 <xs:element name="cve" type="dc:cveType"/>
                                 <xs:element name="cwe" type="xs:positiveInteger"/>
                                 <xs:element name="cvssBelow" type="dc:cvssScoreType"/>
+                                <xs:element name="includedBy" type="xs:string"/>
                             </xs:choice>
                         </xs:sequence>
                         <xs:attribute name="base" use="optional" type="xs:boolean" default="false"/>

@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.owasp.dependencycheck.dependency.Dependency;
+import org.owasp.dependencycheck.dependency.IncludedByReference;
 import org.owasp.dependencycheck.dependency.Vulnerability;
 import org.owasp.dependencycheck.dependency.naming.CpeIdentifier;
 import org.owasp.dependencycheck.dependency.naming.Identifier;
@@ -71,6 +72,13 @@ public class SuppressionRule {
      * The list of CVE entries to suppress.
      */
     private List<String> cve = new ArrayList<>();
+    /**
+     * The list of parent dependencies to suppress this warning in
+     *
+     * Vulnerabilities are suppressed when all values in their 'includedBy' list
+     * are found in the suppression.
+     */
+    private List<String> includedBy = new ArrayList<>();
     /**
      * The list of vulnerability name entries to suppress.
      */
@@ -298,6 +306,42 @@ public class SuppressionRule {
     }
 
     /**
+     * Get the value of includedBy.
+     *
+     * @return the value of includedBy
+     */
+    public List<String> getIncludedBy() {
+        return includedBy;
+    }
+
+    /**
+     * Set the value of includedBy.
+     *
+     * @param includedBy new value of includedBy
+     */
+    public void setIncludedBy(List<String> includedBy) {
+        this.includedBy = includedBy;
+    }
+
+    /**
+     * Adds the dependency to the includedBy list.
+     *
+     * @param includedBy the dependency to add
+     */
+    public void addIncludedBy(String includedBy) {
+        this.includedBy.add(includedBy);
+    }
+
+    /**
+     * Returns whether this suppression rule has includedBy entries.
+     *
+     * @return whether this suppression rule has includedBy entries
+     */
+    public boolean hasIncludedBy() {
+        return !includedBy.isEmpty();
+    }
+
+    /**
      * Get the value of CWE.
      *
      * @return the value of CWE
@@ -503,7 +547,7 @@ public class SuppressionRule {
             }
             removalList.forEach(dependency::removeVulnerableSoftwareIdentifier);
         }
-        if (hasCve() || hasVulnerabilityName() || hasCwe() || hasCvssBelow()) {
+        if (hasCve() || hasVulnerabilityName() || hasCwe() || hasCvssBelow() || hasIncludedBy()) {
             final Set<Vulnerability> removeVulns = new HashSet<>();
             for (Vulnerability v : dependency.getVulnerabilities()) {
                 boolean remove = false;
@@ -522,6 +566,24 @@ public class SuppressionRule {
                             removeVulns.add(v);
                             break;
                         }
+                    }
+                }
+                if (!remove && this.hasIncludedBy() && !dependency.getIncludedBy().isEmpty()) {
+                    boolean allExcluded = true;
+                    for (IncludedByReference seen : dependency.getIncludedBy()) {
+                        boolean seenExcluded = false;
+                        for (String excluded : this.includedBy) {
+                            if (seen.getReference().equalsIgnoreCase(excluded)) {
+                                seenExcluded = true;
+                            }
+                        }
+                        if (!seenExcluded) {
+                            allExcluded = false;
+                        }
+                    }
+                    if (allExcluded) {
+                        remove = true;
+                        removeVulns.add(v);
                     }
                 }
                 if (!remove && v.getName() != null) {

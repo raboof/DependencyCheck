@@ -89,6 +89,10 @@ public class SuppressionHandler extends DefaultHandler {
      */
     public static final String CVSS_BELOW = "cvssBelow";
     /**
+     * The includedBy element name.
+     */
+    public static final String INCLUDED_BY = "includedBy";
+    /**
      * A list of suppression rules.
      */
     private final List<SuppressionRule> suppressionRules = new ArrayList<>();
@@ -196,6 +200,9 @@ public class SuppressionHandler extends DefaultHandler {
                 case CVSS_BELOW:
                     final float cvss = Float.parseFloat(currentText.toString().trim());
                     rule.addCvssBelow(cvss);
+                    break;
+                case INCLUDED_BY:
+                    rule.addIncludedBy(currentText.toString().trim());
                     break;
                 default:
                     break;
